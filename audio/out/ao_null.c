@@ -184,7 +184,7 @@ static int play(struct ao *ao, void **data, int samples, int flags)
     return accepted;
 }
 
-static double get_delay(struct ao *ao)
+static int get_delay(struct ao *ao)
 {
     struct priv *priv = ao->priv;
 
@@ -199,10 +199,8 @@ static double get_delay(struct ao *ao)
     if (priv->broken_eof && priv->buffered < priv->latency)
         delay = priv->latency;
 
-    delay /= ao->samplerate;
-
     if (priv->broken_delay) { // Report only multiples of outburst
-        double q = priv->outburst / (double)ao->samplerate;
+        double q = priv->outburst;
         if (delay > 0)
             delay = (int)(delay / q) * q;
     }

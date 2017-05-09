@@ -130,7 +130,7 @@ static int play(struct ao *ao, void **data, int samples, int flags)
 static double get_delay(struct ao *ao)
 {
     struct priv *priv = ao->priv;
-    return rsd_delay_ms(priv->rd) / 1000.0;
+    return rsd_delay_ms(priv->rd) / 1000.0 * ao->samplerate;
 }
 
 #define OPT_BASE_STRUCT struct priv

@@ -95,7 +95,7 @@ const char *ao_get_description(struct ao *ao);
 bool ao_untimed(struct ao *ao);
 int ao_play(struct ao *ao, void **data, int samples, int flags);
 int ao_control(struct ao *ao, enum aocontrol cmd, void *arg);
-double ao_get_delay(struct ao *ao);
+int ao_get_delay(struct ao *ao);
 int ao_get_space(struct ao *ao);
 void ao_reset(struct ao *ao);
 void ao_pause(struct ao *ao);

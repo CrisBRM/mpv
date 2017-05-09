@@ -168,19 +168,20 @@ static int control(struct ao *ao, enum aocontrol cmd, void *arg)
     return CONTROL_UNKNOWN;
 }
 
-// Return size of the buffered data in seconds. Can include the device latency.
+// Return size of the buffered data in samples. Can include the device latency.
 // Basically, this returns how much data there is still to play, and how long
 // it takes until the last sample in the buffer reaches the speakers. This is
 // used for audio/video synchronization, so it's very important to implement
 // this correctly.
-static double get_delay(struct ao *ao)
+static int get_delay(struct ao *ao)
 {
     struct ao_pull_state *p = ao->api_priv;
 
     int64_t end = atomic_load(&p->end_time_us);
     int64_t now = mp_time_us();
     double driver_delay = MPMAX(0, (end - now) / (1000.0 * 1000.0));
-    return mp_ring_buffered(p->buffers[0]) / (double)ao->bps + driver_delay;
+    double s = mp_ring_buffered(p->buffers[0]) / (double)ao->bps + driver_delay;
+    return s * ao->samplerate;
 }
 
 static void reset(struct ao *ao)

@@ -930,7 +930,9 @@ static void update_avsync_before_frame(struct MPContext *mpctx)
                mpctx->video_status == STATUS_PLAYING &&
                !ao_untimed(mpctx->ao))
     {
-        double buffered_audio = ao_get_delay(mpctx->ao);
+        struct mp_audio fmt;
+        ao_get_format(mpctx->ao, &fmt);
+        double buffered_audio = ao_get_delay(mpctx->ao) / (double)fmt.rate;
 
         double predicted = mpctx->delay / mpctx->video_speed +
                            mpctx->time_frame;

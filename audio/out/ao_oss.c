@@ -533,14 +533,13 @@ static int play(struct ao *ao, void **data, int samples, int flags)
     return len / ao->sstride;
 }
 
-// return: delay in seconds between first and last sample in buffer
-static double get_delay(struct ao *ao)
+static int get_delay(struct ao *ao)
 {
     struct priv *p = ao->priv;
     if (p->audio_fd < 0) {
         double rest = p->audio_end - mp_time_sec();
         if (rest > 0)
-            return rest;
+            return rest * ao->samplerate;
         return 0;
     }
     /* Calculate how many bytes/second is sent out */
@@ -548,18 +547,18 @@ static double get_delay(struct ao *ao)
 #ifdef SNDCTL_DSP_GETODELAY
         int r = 0;
         if (ioctl(p->audio_fd, SNDCTL_DSP_GETODELAY, &r) != -1)
-            return r / (double)ao->bps;
+            return r / (double)ao->bps * ao->samplerate;
 #endif
         p->audio_delay_method = 1; // fallback if not supported
     }
     if (p->audio_delay_method == 1) {
         audio_buf_info zz = {0};
         if (ioctl(p->audio_fd, SNDCTL_DSP_GETOSPACE, &zz) != -1) {
-            return (p->buffersize - zz.bytes) / (double)ao->bps;
+            return (p->buffersize - zz.bytes) / (double)ao->bps  * ao->samplerate;
         }
         p->audio_delay_method = 0; // fallback if not supported
     }
-    return p->buffersize / (double)ao->bps;
+    return p->buffersize / (double)ao->bps  * ao->samplerate;
 }
 
 
@@ -574,7 +573,7 @@ static int get_space(struct ao *ao)
         return zz.fragments * zz.fragsize / ao->sstride;
     }
 
-    if (p->audio_fd < 0 && p->device_failed && get_delay(ao) > 0.2)
+    if (p->audio_fd < 0 && p->device_failed && get_delay(ao) * ao->samplerate > 0.2)
         return 0;
 
     if (p->audio_fd < 0 || device_writable(ao) > 0)
@@ -587,7 +586,7 @@ static int get_space(struct ao *ao)
 static void audio_pause(struct ao *ao)
 {
     struct priv *p = ao->priv;
-    p->prepause_samples = get_delay(ao) * ao->samplerate;
+    p->prepause_samples = get_delay(ao);
 #if KEEP_DEVICE
     ioctl(p->audio_fd, SNDCTL_DSP_RESET, NULL);
 #else

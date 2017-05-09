@@ -276,16 +276,13 @@ static int get_space(struct ao *ao)
     return samples / p->par.round * p->par.round;
 }
 
-/*
- * return: delay in seconds between first and last sample in buffer
- */
-static double get_delay(struct ao *ao)
+static int get_delay(struct ao *ao)
 {
     struct priv *p = ao->priv;
 
     update(ao);
 
-    return p->delay / (double)p->par.rate;
+    return p->delay;
 }
 
 /*

@@ -352,12 +352,12 @@ int ao_control(struct ao *ao, enum aocontrol cmd, void *arg)
     return ao->api->control ? ao->api->control(ao, cmd, arg) : CONTROL_UNKNOWN;
 }
 
-// Return size of the buffered data in seconds. Can include the device latency.
+// Return size of the buffered data in samples. Can include the device latency.
 // Basically, this returns how much data there is still to play, and how long
 // it takes until the last sample in the buffer reaches the speakers. This is
 // used for audio/video synchronization, so it's very important to implement
 // this correctly.
-double ao_get_delay(struct ao *ao)
+int ao_get_delay(struct ao *ao)
 {
     return ao->api->get_delay(ao);
 }

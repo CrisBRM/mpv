@@ -647,7 +647,10 @@ double playing_audio_pts(struct MPContext *mpctx)
     double pts = written_audio_pts(mpctx);
     if (pts == MP_NOPTS_VALUE || !mpctx->ao)
         return pts;
-    return pts - mpctx->audio_speed * ao_get_delay(mpctx->ao);
+    struct mp_audio fmt;
+    ao_get_format(mpctx->ao, &fmt);
+    double delay = ao_get_delay(mpctx->ao) / (double)fmt.rate;
+    return pts - mpctx->audio_speed * delay;
 }
 
 static int write_to_ao(struct MPContext *mpctx, struct mp_audio *data, int flags)
@@ -683,7 +686,10 @@ static void dump_audio_stats(struct MPContext *mpctx)
         return;
     }
 
-    double delay = ao_get_delay(mpctx->ao);
+    struct mp_audio fmt;
+    ao_get_format(mpctx->ao, &fmt);
+
+    double delay = ao_get_delay(mpctx->ao) / (double)fmt.rate;
     if (!mpctx->audio_stat_start) {
         mpctx->audio_stat_start = mp_time_us();
         mpctx->written_audio = delay;

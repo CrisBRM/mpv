@@ -86,20 +86,21 @@ static int control(struct ao *ao, enum aocontrol cmd, void *arg)
     return r;
 }
 
-static double unlocked_get_delay(struct ao *ao)
+static int unlocked_get_delay(struct ao *ao)
 {
     struct ao_push_state *p = ao->api_priv;
-    double driver_delay = 0;
+    int driver_delay = 0;
     if (ao->driver->get_delay)
         driver_delay = ao->driver->get_delay(ao);
-    return driver_delay + mp_audio_buffer_seconds(p->buffer);
+    double delay = mp_audio_buffer_seconds(p->buffer);
+    return driver_delay + delay * ao->samplerate;
 }
 
-static double get_delay(struct ao *ao)
+static int get_delay(struct ao *ao)
 {
     struct ao_push_state *p = ao->api_priv;
     pthread_mutex_lock(&p->lock);
-    double delay = unlocked_get_delay(ao);
+    int delay = unlocked_get_delay(ao);
     pthread_mutex_unlock(&p->lock);
     return delay;
 }
@@ -169,7 +170,8 @@ static void drain(struct ao *ao)
     if (ao->driver->drain) {
         ao->driver->drain(ao);
     } else {
-        double time = unlocked_get_delay(ao);
+        int delay = unlocked_get_delay(ao);
+        double time = delay / (double)ao->samplerate;
         mp_sleep_us(MPMIN(time, maxbuffer) * 1e6);
     }
 
@@ -365,8 +367,10 @@ static void *playthread(void *arg)
                     !mp_audio_buffer_samples(p->buffer))
                 {
                     double now = mp_time_sec();
-                    if (!p->expected_end_time)
-                        p->expected_end_time = now + unlocked_get_delay(ao);
+                    if (!p->expected_end_time) {
+                        p->expected_end_time = now + unlocked_get_delay(ao) /
+                                                     (double)ao->samplerate;
+                    }
                     if (p->expected_end_time < now) {
                         p->still_playing = false;
                     } else {
@@ -389,8 +393,10 @@ static void *playthread(void *arg)
                 if (!ao->driver->wait || ao->driver->wait(ao, &p->lock) < 0) {
                     // Fallback to guessing.
                     double timeout = 0;
-                    if (ao->driver->get_delay)
-                        timeout = ao->driver->get_delay(ao);
+                    if (ao->driver->get_delay) {
+                        timeout = ao->driver->get_delay(ao) /
+                                  (double)ao->samplerate;
+                    }
                     timeout *= 0.25; // wake up if 25% played
                     if (!p->need_wakeup) {
                         struct timespec ts = mp_rel_time_to_timespec(timeout);

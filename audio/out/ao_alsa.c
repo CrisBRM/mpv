@@ -85,7 +85,7 @@ struct priv {
     bool can_pause;
     bool paused;
     snd_pcm_sframes_t prepause_frames;
-    double delay_before_pause;
+    int delay_before_pause;
     snd_pcm_uframes_t buffersize;
     snd_pcm_uframes_t outburst;
 
@@ -926,8 +926,7 @@ alsa_error:
     return 0;
 }
 
-/* delay in seconds between first and last sample in buffer */
-static double get_delay(struct ao *ao)
+static int get_delay(struct ao *ao)
 {
     struct priv *p = ao->priv;
     snd_pcm_sframes_t delay;
@@ -943,7 +942,7 @@ static double get_delay(struct ao *ao)
         snd_pcm_forward(p->alsa, -delay);
         delay = 0;
     }
-    return delay / (double)ao->samplerate;
+    return delay;
 }
 
 // For stream-silence mode: replace remaining buffer with silence.
@@ -970,7 +969,7 @@ static void audio_pause(struct ao *ao)
         return;
 
     p->delay_before_pause = get_delay(ao);
-    p->prepause_frames = p->delay_before_pause * ao->samplerate;
+    p->prepause_frames = p->delay_before_pause;
 
     if (ao->stream_silence) {
         soft_reset(ao);

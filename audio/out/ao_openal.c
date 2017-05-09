@@ -311,12 +311,12 @@ static int play(struct ao *ao, void **data, int samples, int flags)
     return num * CHUNK_SAMPLES;
 }
 
-static double get_delay(struct ao *ao)
+static int get_delay(struct ao *ao)
 {
     ALint queued;
     unqueue_buffers();
     alGetSourcei(sources[0], AL_BUFFERS_QUEUED, &queued);
-    return queued * CHUNK_SAMPLES / (double)ao->samplerate;
+    return queued * CHUNK_SAMPLES;
 }
 
 #define OPT_BASE_STRUCT struct priv

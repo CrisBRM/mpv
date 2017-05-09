@@ -568,7 +568,7 @@ static int get_space(struct ao *ao)
     return space / ao->sstride;
 }
 
-static double get_delay_hackfixed(struct ao *ao)
+static int get_delay_hackfixed(struct ao *ao)
 {
     /* This code basically does what pa_stream_get_latency() _should_
      * do, but doesn't due to multiple known bugs in PulseAudio (at
@@ -620,10 +620,10 @@ static double get_delay_hackfixed(struct ao *ao)
     if (latency < 0)
         latency = 0;
     pa_threaded_mainloop_unlock(priv->mainloop);
-    return latency / 1e6;
+    return latency / 1e6 * ao->samplerate;
 }
 
-static double get_delay_pulse(struct ao *ao)
+static int get_delay_pulse(struct ao *ao)
 {
     struct priv *priv = ao->priv;
     pa_usec_t latency = (pa_usec_t) -1;
@@ -637,11 +637,10 @@ static double get_delay_pulse(struct ao *ao)
         pa_threaded_mainloop_wait(priv->mainloop);
     }
     pa_threaded_mainloop_unlock(priv->mainloop);
-    return latency == (pa_usec_t) -1 ? 0 : latency / 1000000.0;
+    return latency == (pa_usec_t) -1 ? 0 : latency / 1000000.0 * ao->samplerate;
 }
 
-// Return the current latency in seconds
-static double get_delay(struct ao *ao)
+static int get_delay(struct ao *ao)
 {
     struct priv *priv = ao->priv;
     if (priv->cfg_latency_hacks) {

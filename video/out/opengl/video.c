@@ -45,8 +45,8 @@
 #include "video/out/vo.h"
 
 // Maximal number of saved textures (for user script purposes)
-#define MAX_TEXTURE_HOOKS 16
-#define MAX_SAVED_TEXTURES 32
+#define MAX_TEXTURE_HOOKS 32
+#define MAX_SAVED_TEXTURES 64
 
 // scale/cscale arguments that map directly to shader filter routines.
 // Note that the convolution filters are not included in this list.
